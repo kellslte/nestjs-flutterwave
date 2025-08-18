@@ -1,6 +1,6 @@
 {
   "name": "@scwar/nestjs-flutterwave",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A comprehensive NestJS module for integrating with Flutterwave API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

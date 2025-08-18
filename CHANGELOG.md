@@ -1,3 +1,15 @@
+## [1.0.2] - 2025-08-18
+
+### 🔧 Chore
+
+- chore: release version 1.0.1 with initial setup and configurations
+
+### 📝 Other
+
+- Initial commit of the @scwar/nestjs-flutterwave package, including core module, services, interfaces, and example usage. Added ESLint, Prettier, and Jest configurations for code quality and testing. Comprehensive documentation and changelog included.
+
+**Total Changes:** 2 commits
+
 ## [1.0.1] - 2025-08-18
 
 ### 📝 Other
