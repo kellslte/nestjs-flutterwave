@@ -1,6 +1,6 @@
 {
   "name": "@scwar/nestjs-flutterwave",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A comprehensive NestJS module for integrating with Flutterwave API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,10 +22,12 @@
     "version:auto": "node scripts/version-bump.js",
     "changelog:update": "node scripts/update-changelog.js",
     "changelog:generate": "conventional-changelog -p angular -i CHANGELOG.md -s",
-    "release:patch": "npm run version:patch && npm run build && npm run test && git add . && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag \"v$(node -p \"require('./package.json').version\")\"",
-    "release:minor": "npm run version:minor && npm run build && npm run test && git add . && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag \"v$(node -p \"require('./package.json').version\")\"",
-    "release:major": "npm run version:major && npm run build && npm run test && git add . && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag \"v$(node -p \"require('./package.json').version\")\"",
-    "release:auto": "npm run version:auto && npm run build && npm run test && git add . && git commit -m \"chore: bump version to $(node -p \"require('./package.json').version\")\" && git tag \"v$(node -p \"require('./package.json').version\")\"",
+    "type-check": "tsc --noEmit",
+    "pre-commit": "node scripts/pre-commit.js",
+    "release:patch": "node scripts/release.js patch",
+    "release:minor": "node scripts/release.js minor",
+    "release:major": "node scripts/release.js major",
+    "release:auto": "node scripts/release.js auto",
     "prepublishOnly": "npm run build && npm run test"
   },
   "keywords": [

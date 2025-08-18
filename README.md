@@ -468,6 +468,213 @@ npm run test:cov
 npm run test:e2e
 ```
 
+## Development Workflow
+
+### Code Quality
+
+The package includes several tools to maintain code quality:
+
+```bash
+# Lint code
+npm run lint
+
+# Format code
+npm run format
+
+# Type checking
+npm run type-check
+
+# Run pre-commit checks
+npm run pre-commit
+```
+
+### Pre-commit Hook
+
+A pre-commit hook is configured to automatically:
+- Run ESLint
+- Check code formatting
+- Run TypeScript type checking
+- Run tests (if test files are staged)
+
+This ensures all committed code meets quality standards.
+
+## Versioning and Releases
+
+This package follows [Semantic Versioning](https://semver.org/) and uses conventional commit messages for automated versioning.
+
+### Commit Message Format
+
+Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+**Types:**
+- `feat`: New features
+- `fix`: Bug fixes
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting, etc.)
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `test`: Adding or updating tests
+- `chore`: Maintenance tasks
+
+**Examples:**
+```bash
+git commit -m "feat: add support for virtual accounts"
+git commit -m "fix: resolve payment verification issue"
+git commit -m "docs: update API documentation"
+git commit -m "test: add comprehensive test coverage"
+```
+
+### Version Management
+
+#### Manual Version Bumping
+
+```bash
+# Patch version (bug fixes)
+npm run version:patch
+
+# Minor version (new features)
+npm run version:minor
+
+# Major version (breaking changes)
+npm run version:major
+```
+
+#### Automatic Version Bumping
+
+The package can automatically determine the next version based on commit messages:
+
+```bash
+npm run version:auto
+```
+
+This analyzes commits since the last tag and determines whether to bump patch, minor, or major version.
+
+### Changelog Management
+
+Update the changelog automatically:
+
+```bash
+npm run changelog:update
+```
+
+This generates a changelog entry based on conventional commit messages.
+
+### Release Process
+
+The package includes automated release scripts that handle the entire release process:
+
+#### Quick Release Commands
+
+```bash
+# Release patch version
+npm run release:patch
+
+# Release minor version
+npm run release:minor
+
+# Release major version
+npm run release:major
+
+# Auto-release (determines version automatically)
+npm run release:auto
+```
+
+#### What the Release Script Does
+
+1. **Prerequisites Check**: Verifies git repository and branch
+2. **Version Bump**: Updates package.json version
+3. **Changelog Update**: Generates changelog entry
+4. **Build**: Compiles TypeScript code
+5. **Testing**: Runs the test suite
+6. **Git Operations**: Commits changes and creates git tag
+7. **Summary**: Provides next steps for publishing
+
+#### Manual Release Steps
+
+If you prefer to handle releases manually:
+
+```bash
+# 1. Bump version
+npm run version:patch  # or minor/major
+
+# 2. Update changelog
+npm run changelog:update
+
+# 3. Build package
+npm run build
+
+# 4. Run tests
+npm test
+
+# 5. Commit changes
+git add .
+git commit -m "chore: release version X.Y.Z"
+
+# 6. Create tag
+git tag -a vX.Y.Z -m "Release version X.Y.Z"
+
+# 7. Push changes and tags
+git push origin main
+git push origin --tags
+
+# 8. Publish to npm
+npm publish
+```
+
+### Release Workflow Example
+
+Here's a typical release workflow:
+
+```bash
+# 1. Make your changes and commit with conventional messages
+git add .
+git commit -m "feat: add new payment method support"
+git commit -m "fix: resolve webhook handling issue"
+git commit -m "docs: update installation guide"
+
+# 2. Run automatic release
+npm run release:auto
+
+# 3. Push changes and tags
+git push origin main
+git push origin --tags
+
+# 4. Publish to npm
+npm publish
+
+# 5. Create GitHub release with the generated changelog
+```
+
+### Version Bump Rules
+
+- **Patch** (`1.0.0` → `1.0.1`): Bug fixes, documentation updates, minor improvements
+- **Minor** (`1.0.0` → `1.1.0`): New features, backward-compatible enhancements
+- **Major** (`1.0.0` → `2.0.0`): Breaking changes, major refactoring
+
+### Breaking Changes
+
+When making breaking changes:
+
+1. Use `!` in commit messages: `feat!: breaking change description`
+2. Include `BREAKING CHANGE:` in commit body
+3. Document migration steps in changelog
+
+Example:
+```bash
+git commit -m "feat!: change API response format
+
+BREAKING CHANGE: The payment response structure has changed.
+Migration: Update response handling to use new format."
+```
+
 ## Examples
 
 Check out the `examples/` directory for complete working examples of:

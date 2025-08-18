@@ -1,3 +1,11 @@
+## [1.0.1] - 2025-08-18
+
+### 📝 Other
+
+- Initial commit of the @scwar/nestjs-flutterwave package, including core module, services, interfaces, and example usage. Added ESLint, Prettier, and Jest configurations for code quality and testing. Comprehensive documentation and changelog included.
+
+**Total Changes:** 1 commits
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
