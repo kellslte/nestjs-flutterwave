@@ -1,3 +1,11 @@
+## [1.0.3] - 2026-02-16
+
+### 🔧 Chore
+
+- chore: update dependencies and configuration for version 1.0.2
+
+**Total Changes:** 1 commits
+
 ## [1.0.2] - 2025-08-18
 
 ### 🔧 Chore
