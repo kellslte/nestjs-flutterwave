@@ -55,6 +55,17 @@ describe('ChargeService', () => {
       expect(result).toEqual(mockResponse);
       expect(service['post']).toHaveBeenCalledWith('/charges?type=card', mockCardData);
     });
+
+    it('should use v4 charge endpoint when version is v4', async () => {
+      const v4Service = new ChargeService({ ...mockOptions, version: 'v4' });
+      const payload = { amount: 1000, currency: 'NGN' };
+      jest.spyOn(v4Service as any, 'isV4').mockReturnValue(true);
+      jest.spyOn(v4Service as any, 'post').mockResolvedValue({ status: 'success', message: 'ok', data: {} });
+
+      await v4Service.chargeCard(payload as any);
+
+      expect(v4Service['post']).toHaveBeenCalledWith('/charges', { ...payload, type: 'card' });
+    });
   });
 
   describe('chargeBank', () => {

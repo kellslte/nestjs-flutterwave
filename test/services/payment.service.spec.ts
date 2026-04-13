@@ -55,6 +55,22 @@ describe('PaymentService', () => {
             expect(service['post']).toHaveBeenCalledWith('/payments', mockPaymentData);
         });
 
+        it('should initialize payment on /charges for v4', async () => {
+            const v4Service = new PaymentService({ ...mockOptions, version: 'v4' });
+            const payload = {
+                tx_ref: 'TX_123',
+                amount: 1000,
+                currency: 'NGN',
+                redirect_url: 'https://example.com/callback',
+                customer: { email: 'test@example.com' },
+            };
+            jest.spyOn(v4Service as any, 'isV4').mockReturnValue(true);
+            jest.spyOn(v4Service as any, 'post').mockResolvedValue({ status: 'success', message: 'ok', data: {} });
+
+            await v4Service.initializePayment(payload as any);
+            expect(v4Service['post']).toHaveBeenCalledWith('/charges', payload);
+        });
+
         it('should handle payment initialization errors', async () => {
             const mockPaymentData = {
                 tx_ref: 'TX_123',
@@ -126,6 +142,15 @@ describe('PaymentService', () => {
 
             expect(result).toEqual(mockResponse);
             expect(service['get']).toHaveBeenCalledWith('/transactions/FLW_REF_123/verify');
+        });
+
+        it('should verify payment by charge id for v4', async () => {
+            const v4Service = new PaymentService({ ...mockOptions, version: 'v4' });
+            jest.spyOn(v4Service as any, 'isV4').mockReturnValue(true);
+            jest.spyOn(v4Service as any, 'get').mockResolvedValue({ status: 'success', message: 'ok', data: {} });
+
+            await v4Service.verifyPayment({ charge_id: 'chg_123' });
+            expect(v4Service['get']).toHaveBeenCalledWith('/charges/chg_123');
         });
     });
 

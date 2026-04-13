@@ -29,8 +29,28 @@ export class TransactionService extends BaseService {
   /**
    * Get a specific transaction by ID
    */
-  async getTransaction(id: number): Promise<TransactionVerifyResponse> {
+  async getTransaction(id: number | string): Promise<TransactionVerifyResponse> {
     return this.get<TransactionVerifyResponse>(`/transactions/${id}`);
+  }
+
+  /**
+   * Verify or retrieve a charge by id/reference in v4.
+   */
+  async getCharge(chargeId: string): Promise<TransactionVerifyResponse> {
+    if (this.isV4()) {
+      return this.get<TransactionVerifyResponse>(`/charges/${chargeId}`);
+    }
+    return this.get<TransactionVerifyResponse>(`/transactions/${chargeId}/verify`);
+  }
+
+  /**
+   * Verify a transaction by reference.
+   */
+  async verifyByReference(reference: string): Promise<TransactionVerifyResponse> {
+    if (this.isV4()) {
+      return this.get<TransactionVerifyResponse>('/transactions', { reference });
+    }
+    return this.get<TransactionVerifyResponse>(`/transactions/verify_by_reference?tx_ref=${reference}`);
   }
 
   /**

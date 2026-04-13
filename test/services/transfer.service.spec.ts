@@ -82,6 +82,16 @@ describe('TransferService', () => {
 
             await expect(service.initiateTransfer(mockTransferData)).rejects.toThrow('Transfer initiation failed');
         });
+
+        it('should initiate direct transfer on v4 orchestrator endpoint', async () => {
+            const v4Service = new TransferService({ ...mockOptions, version: 'v4' });
+            const payload = { action: 'instant', reference: 'ref_123' };
+            jest.spyOn(v4Service as any, 'isV4').mockReturnValue(true);
+            jest.spyOn(v4Service as any, 'post').mockResolvedValue({ status: 'success', message: 'ok', data: {} });
+
+            await v4Service.initiateDirectTransfer(payload as any);
+            expect(v4Service['post']).toHaveBeenCalledWith('/direct-transfers', payload);
+        });
     });
 
     describe('getTransfers', () => {

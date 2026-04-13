@@ -22,6 +22,8 @@ npm install @scwar/nestjs-flutterwave
 
 ### 1. Import the Module
 
+#### v3 Configuration
+
 ```typescript
 import { Module } from '@nestjs/common';
 import { FlutterwaveModule } from '@scwar/nestjs-flutterwave';
@@ -29,9 +31,30 @@ import { FlutterwaveModule } from '@scwar/nestjs-flutterwave';
 @Module({
   imports: [
     FlutterwaveModule.forRoot({
-      secretKey: process.env.FLUTTERWAVE_SECRET_KEY,
+      secretKey: process.env.FLUTTERWAVE_SECRET_KEY, // v3 key or pre-fetched v4 access token
       publicKey: process.env.FLUTTERWAVE_PUBLIC_KEY,
       version: 'v3', // or 'v4'
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+#### v4 Configuration (OAuth2)
+
+```typescript
+import { Module } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { FlutterwaveModule } from '@scwar/nestjs-flutterwave';
+
+@Module({
+  imports: [
+    FlutterwaveModule.forRoot({
+      version: 'v4',
+      environment: 'sandbox', // or 'production'
+      clientId: process.env.FLW_CLIENT_ID,
+      clientSecret: process.env.FLW_CLIENT_SECRET,
+      idempotencyKeyFactory: () => randomUUID().replace(/-/g, ''),
     }),
   ],
 })
@@ -83,10 +106,19 @@ export class PaymentService {
 
 ```typescript
 interface FlutterwaveModuleOptions {
-  secretKey: string;           // Required: Your Flutterwave secret key
+  secretKey?: string;          // v3: secret key, v4: optional pre-fetched access token
   publicKey?: string;          // Optional: Your Flutterwave public key
   baseUrl?: string;            // Optional: Custom API base URL
   version?: 'v3' | 'v4';      // Optional: API version (default: 'v3')
+  environment?: 'sandbox' | 'production'; // v4 base URL selector
+  clientId?: string;           // v4 OAuth client_id
+  clientSecret?: string;       // v4 OAuth client_secret
+  oauthTokenUrl?: string;      // Optional custom OAuth token URL
+  oauthTokenRefreshBufferSeconds?: number; // Refresh before expiry (default: 60s)
+  enforceV4IdempotencyKey?: boolean; // Throw if no idempotency factory is provided
+  idempotencyKeyFactory?: () => string; // Generate POST idempotency keys in v4 mode
+  defaultTraceId?: string;     // Optional X-Trace-Id for v4 requests
+  defaultScenarioKey?: string; // Optional X-Scenario-Key for v4 test scenarios
   timeout?: number;            // Optional: Request timeout in ms (default: 30000)
   retries?: number;            // Optional: Number of retries (default: 3)
   retryDelay?: number;         // Optional: Retry delay in ms (default: 1000)
@@ -94,6 +126,61 @@ interface FlutterwaveModuleOptions {
   shouldRetry?: (error: any) => boolean; // Optional: Custom retry logic
 }
 ```
+
+### v4 OAuth + Header Behavior
+
+When `version: 'v4'` is enabled, the module follows Flutterwave v4 docs:
+
+- Auth uses OAuth client credentials (`clientId` + `clientSecret`) and auto-refreshes tokens.
+- `X-Idempotency-Key` is sent automatically for `POST` requests.
+- Optional `X-Trace-Id` and `X-Scenario-Key` can be set globally via config.
+
+```typescript
+FlutterwaveModule.forRoot({
+  version: 'v4',
+  environment: 'sandbox',
+  clientId: process.env.FLW_CLIENT_ID,
+  clientSecret: process.env.FLW_CLIENT_SECRET,
+  idempotencyKeyFactory: () => crypto.randomUUID().replace(/-/g, ''),
+});
+```
+
+### Migration Notes (v3 -> v4)
+
+- Use `clientId`/`clientSecret` instead of long-lived secret-key auth.
+- `charges` in v4 mode sends `type` in request body (not query-string routing).
+- Payment verification methods use v4 retrieval routes where applicable.
+- Transfer service now includes v4 helpers: `initiateDirectTransfer`, `createTransferRecipient`, and `createTransferSender`.
+
+### v3 Deprecation Path
+
+If you plan to retire v3 once v4 is GA, this rollout keeps consumers stable:
+
+1. Introduce `version` from app config (default to `v3` initially).
+2. Add v4 credentials (`FLW_CLIENT_ID`, `FLW_CLIENT_SECRET`) and idempotency key generation.
+3. Migrate payment/charge integrations first, then transfer flows.
+4. Run dual-environment testing in sandbox before production cutover.
+5. Switch default to `v4`, keep `v3` behind an explicit override for a short grace period.
+6. Announce v3 removal date in release notes, then remove `v3` mode in the next major version.
+
+### Planned Breaking Changes (v3 Removal)
+
+When v3 support is removed in a future major version, expect these breaking changes:
+
+- `version: 'v3'` will no longer be accepted.
+- `secretKey` will no longer be the primary auth path for v4; use `clientId` and `clientSecret`.
+- v3-only endpoint behavior will be dropped (for example, `/payments` and v3 verify-by-reference patterns).
+- Legacy charge request shapes that rely on v3 semantics should be migrated to v4 charge payloads.
+- Integrations should rely on v4 idempotency behavior for all `POST` requests.
+
+Recommended pre-upgrade checklist:
+
+1. Replace all `version: 'v3'` config with `version: 'v4'`.
+2. Add and validate `FLW_CLIENT_ID` and `FLW_CLIENT_SECRET` in each environment.
+3. Add an `idempotencyKeyFactory` to your module configuration.
+4. Update payment verification calls to use v4-friendly retrieval (`charge_id`/reference flow).
+5. Re-test transfer flows using v4 transfer helpers where needed.
+6. Roll out behind a feature flag before removing v3 fallback.
 
 ## Async Configuration
 
@@ -116,19 +203,80 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 export class AppModule {}
 ```
 
+### Async Configuration (v4)
+
+```typescript
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { randomUUID } from 'node:crypto';
+
+@Module({
+  imports: [
+    FlutterwaveModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        version: 'v4',
+        environment: configService.get<'sandbox' | 'production'>('FLW_ENV', 'sandbox'),
+        clientId: configService.get('FLW_CLIENT_ID'),
+        clientSecret: configService.get('FLW_CLIENT_SECRET'),
+        idempotencyKeyFactory: () => randomUUID().replace(/-/g, ''),
+      }),
+      inject: [ConfigService],
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+## v3 vs v4 Usage Notes
+
+- `v3 auth`: Use `secretKey`.
+- `v4 auth`: Use `clientId` + `clientSecret` (or pass a pre-fetched token via `secretKey`).
+- `v3 payments`: Uses `/payments` and v3 verification routes.
+- `v4 payments`: Uses `/charges` retrieval and reference-based transaction lookup.
+- `v4 headers`: Adds `X-Idempotency-Key` automatically on `POST` requests.
+- `v4 transfers`: Use `initiateDirectTransfer`, `createTransferRecipient`, and `createTransferSender` for new transfer flows.
+
 ## Available Services
 
 ### Payment Service
 ```typescript
+// v3 style (hosted payments endpoint)
+const paymentV3 = await this.flutterwave.payments.initializePayment({
+  tx_ref: `TX_${Date.now()}`,
+  amount: 1000,
+  currency: 'NGN',
+  redirect_url: 'https://yourapp.com/callback',
+  customer: {
+    email: 'john@example.com',
+    name: 'John Doe',
+    phone_number: '+2348012345678',
+  },
+});
+
+// v4 style (charge-style initialization)
+const paymentV4 = await this.flutterwave.payments.initializePayment({
+  reference: `REF_${Date.now()}`,
+  amount: 1000,
+  currency: 'NGN',
+  customer_id: 'cus_xxx',
+  payment_method_id: 'pmd_xxx',
+  redirect_url: 'https://yourapp.com/callback',
+});
+
 // Initialize payment
 const payment = await this.flutterwave.payments.initializePayment(paymentData);
 
-// Verify payment
+// Verify payment (v3 by tx_ref)
 const verification = await this.flutterwave.payments.verifyPayment({
   tx_ref: 'TX_REF_123',
 });
 
-// Get payment by reference
+// Verify/retrieve payment (v4 by charge_id)
+const verificationV4 = await this.flutterwave.payments.verifyPayment({
+  charge_id: 'chg_xxx',
+});
+
+// Get payment by reference (v3: verify_by_reference, v4: transactions?reference=)
 const paymentDetails = await this.flutterwave.payments.getPaymentByReference('TX_REF_123');
 ```
 
@@ -369,6 +517,7 @@ const validation = await this.flutterwave.otp.validateOtp('REF_123', '123456');
 
 ### Charge Service
 ```typescript
+// v3 payload shape (legacy)
 // Charge card
 const cardCharge = await this.flutterwave.charges.chargeCard({
   amount: 1000,
@@ -381,6 +530,15 @@ const cardCharge = await this.flutterwave.charges.chargeCard({
   email: 'john@example.com',
   phone_number: '+2348012345678',
   fullname: 'John Doe',
+});
+
+// v4 payload shape (recommended): use `reference` and typed charge body
+const cardChargeV4 = await this.flutterwave.charges.chargeCard({
+  reference: 'REF_123',
+  amount: 1000,
+  currency: 'NGN',
+  customer_id: 'cus_xxx',
+  payment_method_id: 'pmd_xxx',
 });
 
 // Charge bank account

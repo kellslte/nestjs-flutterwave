@@ -1,5 +1,13 @@
 import { FlutterwaveModuleOptions, RetryOptions } from './interfaces';
 import { HttpClient } from './http-client';
+import {
+  FLUTTERWAVE_API_BASE_URL,
+  FLUTTERWAVE_V4_PRODUCTION_BASE_URL,
+  FLUTTERWAVE_V4_SANDBOX_BASE_URL,
+} from './constants';
+import { V4TokenManager } from './auth/v4-token-manager';
+import { FlutterwaveError } from './errors';
+import { randomUUID } from 'node:crypto';
 
 export abstract class BaseService {
   protected readonly httpClient: HttpClient;
@@ -10,22 +18,44 @@ export abstract class BaseService {
     this.httpClient = new HttpClient();
   }
 
+  protected isV4(): boolean {
+    return this.options.version === 'v4';
+  }
+
   protected getBaseUrl(): string {
     if (this.options.baseUrl) {
       return this.options.baseUrl;
     }
-    
-    const version = this.options.version || 'v3';
-    return version === 'v4' 
-      ? 'https://api.flutterwave.com/v4'
-      : 'https://api.flutterwave.com/v3';
+
+    if (this.isV4()) {
+      return this.options.environment === 'production'
+        ? FLUTTERWAVE_V4_PRODUCTION_BASE_URL
+        : FLUTTERWAVE_V4_SANDBOX_BASE_URL;
+    }
+
+    return FLUTTERWAVE_API_BASE_URL;
   }
 
-  protected getHeaders(): Record<string, string> {
-    return {
-      Authorization: `Bearer ${this.options.secretKey}`,
+  protected async getHeaders(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'): Promise<Record<string, string>> {
+    const token = await this.getAuthorizationToken();
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     };
+
+    if (this.isV4()) {
+      if (this.options.defaultTraceId) {
+        headers['X-Trace-Id'] = this.options.defaultTraceId;
+      }
+      if (this.options.defaultScenarioKey) {
+        headers['X-Scenario-Key'] = this.options.defaultScenarioKey;
+      }
+      if (method === 'POST') {
+        headers['X-Idempotency-Key'] = this.getIdempotencyKey();
+      }
+    }
+
+    return headers;
   }
 
   protected getRetryOptions(): RetryOptions {
@@ -43,7 +73,7 @@ export abstract class BaseService {
       {
         method: 'GET',
         url,
-        headers: this.getHeaders(),
+        headers: await this.getHeaders('GET'),
         timeout: this.options.timeout,
       },
       this.getRetryOptions(),
@@ -56,7 +86,7 @@ export abstract class BaseService {
       {
         method: 'POST',
         url: `${this.getBaseUrl()}${endpoint}`,
-        headers: this.getHeaders(),
+        headers: await this.getHeaders('POST'),
         body: data,
         timeout: this.options.timeout,
       },
@@ -70,7 +100,7 @@ export abstract class BaseService {
       {
         method: 'PUT',
         url: `${this.getBaseUrl()}${endpoint}`,
-        headers: this.getHeaders(),
+        headers: await this.getHeaders('PUT'),
         body: data,
         timeout: this.options.timeout,
       },
@@ -84,7 +114,7 @@ export abstract class BaseService {
       {
         method: 'PATCH',
         url: `${this.getBaseUrl()}${endpoint}`,
-        headers: this.getHeaders(),
+        headers: await this.getHeaders('PATCH'),
         body: data,
         timeout: this.options.timeout,
       },
@@ -98,7 +128,7 @@ export abstract class BaseService {
       {
         method: 'DELETE',
         url: `${this.getBaseUrl()}${endpoint}`,
-        headers: this.getHeaders(),
+        headers: await this.getHeaders('DELETE'),
         timeout: this.options.timeout,
       },
       this.getRetryOptions(),
@@ -118,5 +148,33 @@ export abstract class BaseService {
     }
 
     return url.toString();
+  }
+
+  private async getAuthorizationToken(): Promise<string> {
+    if (this.isV4()) {
+      return V4TokenManager.getAccessToken(this.options);
+    }
+
+    if (!this.options.secretKey) {
+      throw new FlutterwaveError('secretKey is required for v3 requests', 0, 'MISSING_SECRET_KEY');
+    }
+
+    return this.options.secretKey;
+  }
+
+  private getIdempotencyKey(): string {
+    if (this.options.idempotencyKeyFactory) {
+      return this.options.idempotencyKeyFactory();
+    }
+
+    if (this.options.enforceV4IdempotencyKey) {
+      throw new FlutterwaveError(
+        'enforceV4IdempotencyKey is enabled but no idempotencyKeyFactory was provided',
+        0,
+        'MISSING_IDEMPOTENCY_KEY_FACTORY',
+      );
+    }
+
+    return randomUUID().replace(/-/g, '');
   }
 }

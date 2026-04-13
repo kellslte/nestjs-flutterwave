@@ -16,6 +16,15 @@ describe('Module Interfaces', () => {
         publicKey: 'test_public_key',
         baseUrl: 'https://custom.api.com',
         version: 'v4',
+        environment: 'sandbox',
+        clientId: 'client_id',
+        clientSecret: 'client_secret',
+        oauthTokenUrl: 'https://example.com/token',
+        oauthTokenRefreshBufferSeconds: 90,
+        enforceV4IdempotencyKey: true,
+        idempotencyKeyFactory: () => 'abc123def456',
+        defaultTraceId: 'trace1234567890',
+        defaultScenarioKey: 'scenario:successful',
         timeout: 60000,
         retries: 5,
         retryDelay: 2000,
@@ -27,6 +36,15 @@ describe('Module Interfaces', () => {
       expect(options.publicKey).toBe('test_public_key');
       expect(options.baseUrl).toBe('https://custom.api.com');
       expect(options.version).toBe('v4');
+      expect(options.environment).toBe('sandbox');
+      expect(options.clientId).toBe('client_id');
+      expect(options.clientSecret).toBe('client_secret');
+      expect(options.oauthTokenUrl).toBe('https://example.com/token');
+      expect(options.oauthTokenRefreshBufferSeconds).toBe(90);
+      expect(options.enforceV4IdempotencyKey).toBe(true);
+      expect(options.idempotencyKeyFactory?.()).toBe('abc123def456');
+      expect(options.defaultTraceId).toBe('trace1234567890');
+      expect(options.defaultScenarioKey).toBe('scenario:successful');
       expect(options.timeout).toBe(60000);
       expect(options.retries).toBe(5);
       expect(options.retryDelay).toBe(2000);

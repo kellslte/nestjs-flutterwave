@@ -36,28 +36,28 @@ export class CustomerService extends BaseService {
   /**
    * Get a specific customer by ID
    */
-  async getCustomer(id: number): Promise<Customer> {
+  async getCustomer(id: number | string): Promise<Customer> {
     return this.get<Customer>(`/customers/${id}`);
   }
 
   /**
    * Update a customer
    */
-  async updateCustomer(id: number, data: UpdateCustomerRequest): Promise<Customer> {
+  async updateCustomer(id: number | string, data: UpdateCustomerRequest): Promise<Customer> {
     return this.put<Customer>(`/customers/${id}`, data);
   }
 
   /**
    * Delete a customer
    */
-  async deleteCustomer(id: number): Promise<any> {
+  async deleteCustomer(id: number | string): Promise<any> {
     return this.delete(`/customers/${id}`);
   }
 
   /**
    * Get customer transactions
    */
-  async getCustomerTransactions(customerId: number, params?: {
+  async getCustomerTransactions(customerId: number | string, params?: {
     page?: number;
     per_page?: number;
     from?: string;

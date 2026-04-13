@@ -1,21 +1,58 @@
 export interface Customer {
-  id: number;
-  customer_code: string;
-  first_name: string;
-  last_name: string;
+  id: number | string;
+  customer_code?: string;
+  first_name?: string;
+  last_name?: string;
+  name?: {
+    first?: string;
+    middle?: string;
+    last?: string;
+  };
+  address?: {
+    city?: string;
+    country?: string;
+    line1?: string;
+    line2?: string;
+    postal_code?: string;
+    state?: string;
+  };
   email: string;
-  phone: string;
+  phone?: string;
+  phone_number?: string;
+  phone_details?: {
+    country_code?: string;
+    number?: string;
+  };
   metadata?: any;
-  risk_action: string;
-  international_format_phone: string;
-  created_at: string;
-  updated_at: string;
+  risk_action?: string;
+  international_format_phone?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_datetime?: string;
 }
 
 export interface CreateCustomerRequest {
   email: string;
-  phone_number: string;
-  name: string;
+  phone_number?: string;
+  name?:
+    | string
+    | {
+        first?: string;
+        middle?: string;
+        last?: string;
+      };
+  phone?: {
+    country_code?: string;
+    number?: string;
+  };
+  address?: {
+    city?: string;
+    country?: string;
+    line1?: string;
+    line2?: string;
+    postal_code?: string;
+    state?: string;
+  };
   metadata?: any;
 }
 

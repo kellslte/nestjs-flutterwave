@@ -1,8 +1,11 @@
 export interface PaymentRequest {
+  reference?: string;
   tx_ref: string;
   amount: number;
   currency: string;
   redirect_url: string;
+  customer_id?: string;
+  payment_method_id?: string;
   customer: {
     email: string;
     phone_number?: string;
@@ -25,16 +28,38 @@ export interface PaymentResponse {
   status: string;
   message: string;
   data: {
-    link: string;
+    id?: string | number;
+    link?: string;
     status: string;
-    message: string;
-    reference: string;
+    message?: string;
+    reference?: string;
+    amount?: number;
+    currency?: string;
+    customer?: string | object;
+    payment_method?: {
+      type?: string;
+      card?: {
+        expiry_month?: number;
+        expiry_year?: number;
+        first6?: string;
+        last4?: string;
+        network?: string;
+      };
+      [key: string]: any;
+    };
+    next_action?: {
+      type?: string;
+      url?: string;
+      [key: string]: any;
+    };
+    [key: string]: any;
   };
 }
 
 export interface PaymentVerificationRequest {
   tx_ref?: string;
   flw_ref?: string;
+  charge_id?: string;
 }
 
 export interface PaymentVerificationResponse {
@@ -42,6 +67,7 @@ export interface PaymentVerificationResponse {
   message: string;
   data: {
     id: number;
+    reference?: string;
     tx_ref: string;
     flw_ref: string;
     amount: number;
@@ -58,6 +84,7 @@ export interface PaymentVerificationResponse {
     created_at: string;
     account_id: number;
     customer: any;
+    payment_method?: any;
     [key: string]: any;
   };
 }

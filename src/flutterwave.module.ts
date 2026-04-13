@@ -1,5 +1,10 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { FLUTTERWAVE_MODULE_OPTIONS } from './constants';
+import {
+  FLUTTERWAVE_API_BASE_URL,
+  FLUTTERWAVE_V4_PRODUCTION_BASE_URL,
+  FLUTTERWAVE_V4_SANDBOX_BASE_URL,
+  FLUTTERWAVE_MODULE_OPTIONS,
+} from './constants';
 import { FlutterwaveModuleOptions, FlutterwaveModuleAsyncOptions } from './interfaces';
 import { FlutterwaveService } from './flutterwave.service';
 
@@ -12,9 +17,15 @@ export class FlutterwaveModule {
         {
           provide: FLUTTERWAVE_MODULE_OPTIONS,
           useValue: {
-            baseUrl: options.version === 'v4' 
-              ? 'https://api.flutterwave.com/v4'
-              : 'https://api.flutterwave.com/v3',
+            version: options.version || 'v3',
+            environment: options.environment || 'sandbox',
+            baseUrl:
+              options.baseUrl ||
+              (options.version === 'v4'
+                ? options.environment === 'production'
+                  ? FLUTTERWAVE_V4_PRODUCTION_BASE_URL
+                  : FLUTTERWAVE_V4_SANDBOX_BASE_URL
+                : FLUTTERWAVE_API_BASE_URL),
             timeout: 30000,
             retries: 3,
             retryDelay: 1000,
@@ -36,7 +47,27 @@ export class FlutterwaveModule {
       providers: [
         {
           provide: FLUTTERWAVE_MODULE_OPTIONS,
-          useFactory: options.useFactory,
+          useFactory: async (...args: any[]) => {
+            const resolved = await options.useFactory(...args);
+            const version = resolved.version || 'v3';
+            const environment = resolved.environment || 'sandbox';
+            return {
+              version,
+              environment,
+              baseUrl:
+                resolved.baseUrl ||
+                (version === 'v4'
+                  ? environment === 'production'
+                    ? FLUTTERWAVE_V4_PRODUCTION_BASE_URL
+                    : FLUTTERWAVE_V4_SANDBOX_BASE_URL
+                  : FLUTTERWAVE_API_BASE_URL),
+              timeout: 30000,
+              retries: 3,
+              retryDelay: 1000,
+              maxRetryDelay: 10000,
+              ...resolved,
+            };
+          },
           inject: options.inject || [],
         },
         FlutterwaveService,

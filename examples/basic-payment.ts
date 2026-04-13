@@ -8,6 +8,14 @@ import { FlutterwaveModule } from '@scwar/nestjs-flutterwave';
       publicKey: process.env.FLUTTERWAVE_PUBLIC_KEY!,
       version: 'v3',
     }),
+    // v4 example:
+    // FlutterwaveModule.forRoot({
+    //   version: 'v4',
+    //   environment: 'sandbox',
+    //   clientId: process.env.FLW_CLIENT_ID!,
+    //   clientSecret: process.env.FLW_CLIENT_SECRET!,
+    //   idempotencyKeyFactory: () => crypto.randomUUID().replace(/-/g, ''),
+    // }),
   ],
 })
 export class AppModule {}

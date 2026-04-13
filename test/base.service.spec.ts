@@ -11,8 +11,8 @@ class TestService extends BaseService {
     return this.getBaseUrl();
   }
 
-  public testGetHeaders(): Record<string, string> {
-    return this.getHeaders();
+  public async testGetHeaders(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET'): Promise<Record<string, string>> {
+    return this.getHeaders(method);
   }
 
   public testGetRetryOptions() {
@@ -45,10 +45,16 @@ describe('BaseService', () => {
     expect(v3Service.testGetBaseUrl()).toBe('https://api.flutterwave.com/v3');
   });
 
-  it('should return correct base URL for v4', () => {
+  it('should return sandbox base URL for v4 by default', () => {
     const options = { ...mockOptions, version: 'v4' as const };
     const v4Service = new TestService(options);
-    expect(v4Service.testGetBaseUrl()).toBe('https://api.flutterwave.com/v4');
+    expect(v4Service.testGetBaseUrl()).toBe('https://developersandbox-api.flutterwave.com');
+  });
+
+  it('should return production base URL for v4', () => {
+    const options = { ...mockOptions, version: 'v4' as const, environment: 'production' as const };
+    const v4Service = new TestService(options);
+    expect(v4Service.testGetBaseUrl()).toBe('https://developerapi.flutterwave.com');
   });
 
   it('should return custom base URL when provided', () => {
@@ -57,8 +63,8 @@ describe('BaseService', () => {
     expect(customService.testGetBaseUrl()).toBe('https://custom.api.com');
   });
 
-  it('should return correct headers', () => {
-    const headers = service.testGetHeaders();
+  it('should return correct headers', async () => {
+    const headers = await service.testGetHeaders();
     expect(headers.Authorization).toBe('Bearer test_secret_key');
     expect(headers['Content-Type']).toBe('application/json');
   });
@@ -77,5 +83,17 @@ describe('BaseService', () => {
     expect(retryOptions.retries).toBe(3);
     expect(retryOptions.retryDelay).toBe(1000);
     expect(retryOptions.maxRetryDelay).toBe(10000);
+  });
+
+  it('should set idempotency header for v4 POST', async () => {
+    const options = {
+      ...mockOptions,
+      version: 'v4' as const,
+      idempotencyKeyFactory: () => 'testidempotency123',
+    };
+    const v4Service = new TestService(options);
+    const headers = await v4Service.testGetHeaders('POST');
+
+    expect(headers['X-Idempotency-Key']).toBe('testidempotency123');
   });
 });
