@@ -1,3 +1,11 @@
+## [1.1.0] - 2026-04-13
+
+### ✨ Features
+
+- feat: implement v4 support for Flutterwave integration, including OAuth2 authentication, updated API endpoints, and enhanced configuration options. Added migration notes and examples for transitioning from v3 to v4. Updated README and interfaces to reflect new features and changes.
+
+**Total Changes:** 1 commits
+
 ## [1.0.3] - 2026-02-16
 
 ### 🔧 Chore
